@@ -1,0 +1,26 @@
+[package]
+name = "xiao-camera"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1"
+log = "0.4"
+esp-idf-svc = "=0.53.0"
+esp-idf-sys = { version = "=0.38.1", features = ["binstart"] }
+
+[build-dependencies]
+embuild = { version = "0.33", features = ["espidf"] }
+
+[profile.release]
+opt-level = "s"
+lto = true
+
+[package.metadata.esp-idf-sys]
+esp_idf_version = "v6.1"
+
+[[package.metadata.esp-idf-sys.extra_components]]
+remote_component = { name = "espressif/esp32-camera", version = "2.1.8" }
+bindings_header = "bindings.h"
+bindings_module = "camera"
+

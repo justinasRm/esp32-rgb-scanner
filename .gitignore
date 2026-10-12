@@ -1,0 +1,9 @@
+.pio/
+.pio-core/
+/target/
+/.embuild/
+/sdkconfig
+/sdkconfig.old
+
+
+/wifi-config.rs
