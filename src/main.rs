@@ -1,4 +1,4 @@
-//! Start the camera, connect to the hotspot, and serve the color meter.
+//! Start the camera, connect to Wi-Fi, and serve the live preview.
 mod camera;
 mod network;
 mod web;
@@ -12,28 +12,25 @@ use std::{
 };
 
 fn run() -> Result<()> {
-    // Both handles point to the same mutex-protected latest JPEG.
+    // The camera task updates this JPEG while HTTP clients read it.
     let frame_slot = Mutex::new(None);
     let latest_frame = Arc::new(frame_slot);
     let camera_output = Arc::clone(&latest_frame);
-    let color_slot = Mutex::new(None);
-    let latest_color = Arc::new(color_slot);
-    let camera_color = Arc::clone(&latest_color);
 
-    // Keep one-second camera capture independent from web page requests.
+    // Capture independently so each viewer can request the latest frame.
     thread::Builder::new()
         .name("camera".into())
         .stack_size(8192)
         .spawn(move || {
-            if let Err(error) = camera::run(camera_output, camera_color) {
+            if let Err(error) = camera::run(camera_output) {
                 log::error!("Camera stopped: {error:#}");
             }
         })?;
 
     let wifi = network::connect()?;
-    let _server = web::start(latest_frame, latest_color)?;
+    let _server = web::start(latest_frame)?;
     let address = wifi.wifi().sta_netif().get_ip_info()?.ip;
-    log::info!("Open http://{address} to view the camera color meter");
+    log::info!("Open http://{address} to view the camera");
 
     loop {
         thread::sleep(Duration::from_secs(60));

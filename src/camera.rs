@@ -1,4 +1,4 @@
-//! XIAO ESP32S3 Sense camera setup and one-frame-per-second capture.
+//! Capture one maximum-resolution JPEG per second for the web server.
 use anyhow::{bail, Context, Result};
 use esp_idf_sys::{camera, ESP_OK};
 use std::{
@@ -10,15 +10,6 @@ use std::{
 
 /// Latest JPEG shared with the web server.
 pub type LatestFrame = Arc<Mutex<Option<Vec<u8>>>>;
-/// Latest average RGB color from the centered five percent of the frame.
-pub type LatestColor = Arc<Mutex<Option<CenterColor>>>;
-
-#[derive(Clone, Copy)]
-pub struct CenterColor {
-    pub red: u8,
-    pub green: u8,
-    pub blue: u8,
-}
 
 /// Keeps the camera driver's frame buffer valid until it is returned.
 struct Frame(NonNull<camera::camera_fb_t>);
@@ -40,55 +31,6 @@ impl Drop for Frame {
     fn drop(&mut self) {
         unsafe { camera::esp_camera_fb_return(self.0.as_ptr()) };
     }
-}
-
-/// Decode a small JPEG preview and average its centered five-percent region.
-fn center_color(frame: &Frame) -> Result<CenterColor> {
-    let camera_frame = unsafe { frame.0.as_ref() };
-    let width = usize::try_from(camera_frame.width)?;
-    let height = usize::try_from(camera_frame.height)?;
-    let scaled_width = width.div_ceil(8);
-    let scaled_height = height.div_ceil(8);
-    let mut pixels = vec![0; scaled_width * scaled_height * 3];
-    let mut config: camera::esp_jpeg_image_cfg_t = unsafe { std::mem::zeroed() };
-    config.indata = frame.jpeg().as_ptr() as *mut u8;
-    config.indata_size = u32::try_from(frame.jpeg().len())?;
-    config.outbuf = pixels.as_mut_ptr();
-    config.outbuf_size = u32::try_from(pixels.len())?;
-    config.out_format = camera::esp_jpeg_image_format_t_JPEG_IMAGE_FORMAT_RGB888;
-    config.out_scale = camera::esp_jpeg_image_scale_t_JPEG_IMAGE_SCALE_1_8;
-
-    let mut decoded = camera::esp_jpeg_image_output_t::default();
-    let result = unsafe { camera::esp_jpeg_decode(&mut config, &mut decoded) };
-    if result != ESP_OK {
-        bail!("JPEG color decode failed ({result:#x})");
-    }
-
-    let width = usize::from(decoded.width);
-    let height = usize::from(decoded.height);
-    let region_width = (width as f32 * 0.05_f32.sqrt()).round() as usize;
-    let region_height = (height as f32 * 0.05_f32.sqrt()).round() as usize;
-    let left = (width - region_width) / 2;
-    let top = (height - region_height) / 2;
-    let mut red = 0_u64;
-    let mut green = 0_u64;
-    let mut blue = 0_u64;
-
-    for y in top..top + region_height {
-        for x in left..left + region_width {
-            let index = (y * width + x) * 3;
-            red += u64::from(pixels[index]);
-            green += u64::from(pixels[index + 1]);
-            blue += u64::from(pixels[index + 2]);
-        }
-    }
-
-    let count = (region_width * region_height) as u64;
-    Ok(CenterColor {
-        red: ((red + count / 2) / count) as u8,
-        green: ((green + count / 2) / count) as u8,
-        blue: ((blue + count / 2) / count) as u8,
-    })
 }
 
 fn initialize() -> Result<()> {
@@ -135,7 +77,7 @@ fn initialize() -> Result<()> {
 }
 
 /// Start capturing one maximum-resolution JPEG every second.
-pub fn run(latest: LatestFrame, latest_color: LatestColor) -> Result<()> {
+pub fn run(latest: LatestFrame) -> Result<()> {
     initialize()?;
     loop {
         let started = Instant::now();
@@ -146,7 +88,6 @@ pub fn run(latest: LatestFrame, latest_color: LatestColor) -> Result<()> {
             driver_frame.width,
             driver_frame.height
         );
-        *latest_color.lock().unwrap() = Some(center_color(&frame)?);
         *latest.lock().unwrap() = Some(frame.jpeg().to_vec());
         drop(frame);
         thread::sleep(Duration::from_secs(1).saturating_sub(started.elapsed()));

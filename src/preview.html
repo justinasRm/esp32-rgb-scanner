@@ -2,61 +2,40 @@
 <html lang="en">
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width,initial-scale=1" />
-	<title>XIAO camera color meter</title>
+	<title>XIAO ESP32S3 camera</title>
 	<style>
 		body {
-			font: 18px system-ui;
+			font: 16px system-ui, sans-serif;
 			background: #14202b;
 			color: white;
-			margin: 28px auto;
+			margin: 24px auto;
 			max-width: 1000px;
-			padding: 0 18px;
+			padding: 0 16px;
 		}
-		canvas {
+		img {
 			display: block;
-			max-width: 100%;
+			width: 100%;
 			height: auto;
-			background: #000;
-			border-radius: 12px;
-		}
-		#readout {
-			display: flex;
-			align-items: center;
-			gap: 14px;
-			margin: 16px 0;
-		}
-		#swatch {
-			width: 54px;
-			height: 54px;
-			border: 2px solid white;
+			background: black;
 			border-radius: 8px;
 		}
-		code {
-			font-size: 1.25em;
-		}
-		button {
-			font: inherit;
-			padding: 8px 16px;
-		}
 	</style>
-	<h1>XIAO camera color meter</h1>
-	<p id="status">Starting camera…</p>
-	<canvas
-		id="view"
-		aria-label="Camera preview with center sample outlined"
-	></canvas>
-	<div id="readout">
-		<div id="swatch"></div>
-		<div>
-			<code id="hex">#------</code><br /><span id="rgb">R — · G — · B —</span>
-		</div>
-	</div>
-	<p>
-		Average RGB color from the center 5% of the image · updates once per second.
-	</p>
-	<p>
-		<button id="toggle">Pause</button> <button id="copy">Copy RGB</button>
-		<a href="/rgb-only">RGB-only page</a>
-	</p>
-	<script type="module" src="/app.js"></script>
+	<h1>XIAO ESP32S3 Sense camera</h1>
+	<p id="status">Waiting for camera…</p>
+	<img id="camera" alt="Live camera feed" />
+	<script>
+		const camera = document.getElementById("camera");
+		const status = document.getElementById("status");
+		camera.onload = () => {
+			status.textContent = `${camera.naturalWidth} × ${camera.naturalHeight}`;
+		};
+		camera.onerror = () => {
+			status.textContent = "Waiting for camera…";
+		};
+		function update() {
+			camera.src = `/capture?t=${Date.now()}`;
+			setTimeout(update, 1000);
+		}
+		update();
+	</script>
 </html>
