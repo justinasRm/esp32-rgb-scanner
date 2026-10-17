@@ -1,20 +1,18 @@
-# XIAO ESP32S3 Sense camera server
+# BLE hello sender (Rust)
 
-Minimal Rust camera server: connects to the configured Wi-Fi network, captures
-one maximum-resolution JPEG per second, and serves an auto-updating preview at
-`/`. The camera sensor sets the actual maximum resolution.
+## Flash and view serial output
 
-The code is split into small parts:
+Install the Rust ESP toolchain and ESP-IDF 6.1, then connect the XIAO ESP32-S3
+Sense by USB. In this folder, run:
 
-- `src/main.rs` starts the camera, Wi-Fi, and web server.
-- `src/camera.rs` configures the camera and captures one JPEG per second.
-- `src/network.rs` joins the phone hotspot.
-- `src/web.rs` serves the preview page and latest JPEG.
-- `src/preview.html` refreshes the image once per second.
+    cargo run --release
 
-Hotspot settings live in the gitignored `wifi-config.rs`; copy
-`wifi-config.example.rs` for a fresh checkout. Changing credentials requires
-rebuilding and uploading.
+Choose the board's /dev/cu.usbmodem... port if prompted. List ports with
+ls /dev/cu.\*
 
-Build and flash with `cargo run --release`, then open the URL printed in the
-serial log. The ESP32 prints the detected sensor and captured frame size.
+The command builds, flashes, and opens the serial monitor. Close the monitor
+with Ctrl+].
+
+The sender appears as ESP32-HELLO and repeatedly advertises hello at the
+250 ms interval. Every five seconds, serial output reports advertising state,
+uptime, and free heap.

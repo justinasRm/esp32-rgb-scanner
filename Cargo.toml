@@ -1,5 +1,5 @@
 [package]
-name = "xiao-camera"
+name = "ble-hello-sender"
 version = "0.1.0"
 edition = "2021"
 
@@ -18,9 +18,3 @@ lto = true
 
 [package.metadata.esp-idf-sys]
 esp_idf_version = "v6.1"
-
-[[package.metadata.esp-idf-sys.extra_components]]
-remote_component = { name = "espressif/esp32-camera", version = "2.1.8" }
-bindings_header = "bindings.h"
-bindings_module = "camera"
-
