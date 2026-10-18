@@ -2,6 +2,15 @@
 name = "ble-hello-sender"
 version = "0.1.0"
 edition = "2021"
+autobins = false
+
+[[bin]]
+name = "sender"
+path = "src/sender.rs"
+
+[[bin]]
+name = "receiver"
+path = "src/receiver.rs"
 
 [dependencies]
 anyhow = "1"

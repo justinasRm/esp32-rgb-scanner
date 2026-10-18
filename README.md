@@ -1,18 +1,21 @@
-# BLE hello sender (Rust)
+# BLE packet demo
 
-## Flash and view serial output
+Flash the two boards separately; choose the correct USB port when prompted:
 
-Install the Rust ESP toolchain and ESP-IDF 6.1, then connect the XIAO ESP32-S3
-Sense by USB. In this folder, run:
+```sh
+cargo run --release --bin sender
+cargo run --release --bin receiver
+```
 
-    cargo run --release
+Close each serial monitor with `Ctrl+]`. Keep both boards connected by USB,
+find their port names, and start the Rust dashboard:
 
-Choose the board's /dev/cu.usbmodem... port if prompted. List ports with
-ls /dev/cu.\*
+```sh
+ls /dev/cu.*
+cd dashboard
+cargo run --release -- /dev/cu.SENDER_PORT /dev/cu.RECEIVER_PORT
+```
 
-The command builds, flashes, and opens the serial monitor. Close the monitor
-with Ctrl+].
-
-The sender appears as ESP32-HELLO and repeatedly advertises hello at the
-250 ms interval. Every five seconds, serial output reports advertising state,
-uptime, and free heap.
+Open [http://localhost:8000](http://localhost:8000). The sender advertises a
+connectable GATT service with a `hello` characteristic. The receiver connects to
+the sender and reads `hello`.

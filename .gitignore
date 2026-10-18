@@ -1,6 +1,6 @@
 .pio/
 .pio-core/
-/target/
+target/
 /.embuild/
 /sdkconfig
 /sdkconfig.old
